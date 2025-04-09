@@ -1,0 +1,20 @@
+{
+  "port": 3003,
+  "db_host": "localhost",
+  "db_username": "postgres",
+  "db_password": "qwerty",
+  "db_port": 5432,
+  "db_name": "IT",
+  "expiration_minute": 3,
+  "crypt_password": "MySecretPasswordForOTP",
+  "iv": "abcd1234",
+  "email": {
+    "user": "fotimaeshonova69@gmail.com",
+    "pass": "hmqevxnrfkhvatka"
+  },
+  "smtp_password": "hmqevxnrfkhvatka",
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "fotimaeshonova69@gmail.com",
+  "api_url": "http://localhost:3003"
+}
