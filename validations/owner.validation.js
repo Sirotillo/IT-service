@@ -13,14 +13,7 @@ exports.ownerValidation = (body) => {
         "string.pattern.base": "Telefon raqam formati notog'ri",
         "any.required": "Telefon raqam majburiy",
       }),
-    token: Joi.string()
-      .pattern(/^\d{2}-\d{3}-\d{2}-\d{2}$/)
-      .required()
-      .messages({
-        "string.pattern.base":
-          "Token formati noto‘g‘ri (masalan: 12-345-67-89)",
-        "any.required": "Token majburiy",
-      }),
+    token: Joi.string(),
     email: Joi.string().email().required().messages({
       "string.email": "Iltimos, to‘g‘ri email formatini kiriting",
       "any.required": "Email majburiy",

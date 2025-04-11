@@ -33,18 +33,10 @@ const Admins = sequelize.define(
       },
     },
     token: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
-      validate: {
-        is: /^\d{2}-\d{3}-\d{2}-\d{2}$/, // 12-345-67-89
-      },
+      type: DataTypes.STRING,
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false,
-    },
-    role: {
-      type: DataTypes.ENUM("superadmin", "admin"),
       allowNull: false,
     },
     status: {

@@ -88,26 +88,6 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-const getRentedProductsInRange = async (req, res) => {
-  const { from, to } = req.query;
-
-  try {
-    const [results] = await sequelize.query(
-      `
-      SELECT * FROM rentals
-      WHERE start_date <= :to AND end_date >= :from
-    `,
-      {
-        replacements: { from, to },
-      }
-    );
-
-    res.send(results);
-  } catch (error) {
-    errorHandler(error, res)
-    res.status(500).json({ message: "Xatolik yuz berdi" });
-  }
-};
 
 module.exports = {
   addNewProduct,
@@ -115,5 +95,4 @@ module.exports = {
   findByIdProducts,
   updateProduct,
   deleteProduct,
-  getRentedProductsInRange,
 };

@@ -18,6 +18,7 @@ exports.clientValidation = (body) => {
     }),
     password: Joi.string().required(),
     status: Joi.boolean(),
+    token: Joi.string(),
   });
 
   return schema.validate(body, { abortEarly: false });

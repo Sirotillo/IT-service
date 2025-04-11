@@ -9,22 +9,24 @@ const {
   refreshToken,
   registerOwner,
   activateOwner,
-  getTopRentingOwners,
 } = require("../controllers/owners.controller");
+const adminGuard = require("../Middlewares/guard/admin.guard");
+const isCreatorGuard = require("../Middlewares/guard/is_creator.guard");
+const ownerSelfGuard = require("../Middlewares/guard/owner.self.guard");
+const ownerGuard = require("../Middlewares/guard/owner.guard");
 
 const router = require("express").Router();
 
-router.post("/", addNewOwner);
-router.get("/", findAllOwners);
-router.get("/:id", findByIdOwners);
-router.put("/:id", updateOwner);
-router.delete("/:id", deleteOwner);
+router.post("/", adminGuard, addNewOwner);
+router.get("/", isCreatorGuard, findAllOwners);
+router.get("/:id", adminGuard, ownerGuard, ownerSelfGuard, findByIdOwners);
+router.put("/:id", adminGuard, ownerGuard, ownerSelfGuard, updateOwner);
+router.delete("/:id", adminGuard, ownerSelfGuard, deleteOwner);
 
 router.post("/register", registerOwner);
 router.get("/activate/:link", activateOwner);
 router.post("/login", loginOwner);
 router.post("/logout", logoutOwner);
 router.post("/refreshToken", refreshToken);
-router.get("/top-owners", getTopRentingOwners);
 
 module.exports = router;

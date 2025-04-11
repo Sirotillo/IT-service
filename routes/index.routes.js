@@ -10,6 +10,7 @@ const invoicesRouter = require("./invoices.routes");
 const rentalPriceRouter = require("./rentalPrice.routes");
 const productsRouter = require("./products.routes");
 const paymentsRouter = require("./payments.routes");
+const smartCallRouter = require("./smartCall.routes");
 
 // router.use("/clients", clientsRouter);
 // router.use("/admins", adminsRouter);
@@ -31,5 +32,6 @@ router.use("/invoices", invoicesRouter);
 router.use("/rentalPrice", rentalPriceRouter);
 router.use("/products", productsRouter);
 router.use("/payments", paymentsRouter);
-
+router.use("/smartCall", smartCallRouter);
+ 
 module.exports = router;

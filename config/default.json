@@ -6,15 +6,15 @@
   "db_port": 5432,
   "db_name": "IT",
   "expiration_minute": 3,
-  "crypt_password": "MySecretPasswordForOTP",
-  "iv": "abcd1234",
-  "email": {
-    "user": "fotimaeshonova69@gmail.com",
-    "pass": "hmqevxnrfkhvatka"
-  },
   "smtp_password": "hmqevxnrfkhvatka",
   "smtp_host": "smtp.gmail.com",
   "smtp_port": 587,
   "smtp_user": "fotimaeshonova69@gmail.com",
-  "api_url": "http://localhost:3003"
+  "api_url": "http://localhost:3003",
+  "tokenKey": "MyVeryVerySecretKey",
+  "tokenTime": 86400,
+  "client_access_key": "your_access_key_here",
+  "client_refresh_key": "your_refresh_key_here",
+  "access_time": "1h",
+  "refresh_time": "7d"
 }

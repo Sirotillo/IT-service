@@ -23,6 +23,11 @@ const addNewOwner = async (req, res) => {
 
 const findAllOwners = async (req, res) => {
   try {
+    const authoration = req.headers.authoration;
+    if (!authoration) {
+      return res.status(403).send({ message: "Authoration token berilmagan" });
+    }
+
     const owners = await Owners.findAll();
     res.status(200).send({ owners });
   } catch (error) {
@@ -99,20 +104,15 @@ const registerOwner = async (req, res) => {
   }
 
   try {
-    const existingOwner = await Owners.findOne({ where: { email } });
-    if (existingOwner) {
-      return res
-        .status(400)
-        .json({ message: "Owner with this email already exists!" });
-    }
+    // const owner = await Owners.findOne({ where: { email } });
+    // if (!owner) {
+    //   return res.status(400).send({ message: "Email yoki parol notog'ri" });
+    // }
 
-    const existingPhone = await Owners.findOne({ where: { phone_number } });
-    if (existingPhone) {
-      return res
-        .status(400)
-        .json({ message: "Owner with this phone number already exists!" });
-    }
-
+    // const validPassword = bcrypt.compareSync(password, owner.password);
+    // if (!validPassword) {
+    //   return res.status(400).send({ message: "Email yoki parol notog'ri" });
+    // }
     const hashedPassword = await bcrypt.hash(password, 10);
     const activation_link = uuid.v4();
 
@@ -130,11 +130,19 @@ const registerOwner = async (req, res) => {
       `${config.get("api_url")}/api/owners/activate/${activation_link}`
     );
 
-    const token = jwt.sign(
-      { id: newOwner.id, company_name: newOwner.company_name },
-      "secret_key_jwt",
-      { expiresIn: "1h" }
-    );
+    const payload = {
+      id: newOwner._id,
+      email: newOwner.email,
+      addres: newOwner.addres,
+      role: "owner",
+    };
+
+    const token = jwt.sign(payload, config.get("tokenKey"), {
+      expiresIn: config.get("tokenTime"),
+    });
+
+    newOwner.token = token;
+    await newOwner.save();
 
     return res.status(201).send({
       message:
@@ -156,26 +164,62 @@ const registerOwner = async (req, res) => {
 };
 
 const loginOwner = async (req, res) => {
-  const { company_name, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const owner = await Owners.findOne({ where: { company_name } });
-  if (!owner) return res.status(400).send("Owner not found");
+    const owner = await Owners.findOne({ where: { email } });
 
-  const isMatch = await bcrypt.compare(password, owner.password);
-  if (!isMatch) return res.status(400).send("Invalid password");
+    if (!owner) {
+      return res.status(400).send({ message: "Email yoki parol noto‘g‘ri" });
+    }
 
-  const token = jwt.sign(
-    { id: owner.id, username: owner.company_name },
-    "your-secret-key",
-    { expiresIn: "24h" }
-  );
+    const validPassword = bcrypt.compareSync(password, owner.password);
+    console.log("Body:", req.body);
+    console.log("Email:", req.body.email);
+    console.log("Password:", req.body.password);
+    if (!validPassword) {
+      return res.status(400).send({ message: "Email yoki parol noto‘g‘ri" });
+    }
 
-  res.json({ token });
+    const payload = {
+      id: owner.id,
+      email: owner.email,
+      addres: owner.addres,
+      role: "owner",
+    };
+
+    const token = jwt.sign(payload, config.get("tokenKey"), {
+      expiresIn: config.get("tokenTime"),
+    });
+
+    owner.token = token;
+    await owner.save();
+
+    res.send({ message: "Tizimga xush kelibsiz", token });
+  } catch (error) {
+    errorHandler(error, res);
+  }
 };
 
 const logoutOwner = async (req, res) => {
-  res.clearCookie("token");
-  res.send("Logged out successfully");
+  try {
+    const { email } = req.body;
+
+    const owner = await Owners.findOne({ where: { email } });
+
+    if (!owner) {
+      return res.status(400).send({ message: "Foydalanuvchi topilmadi" });
+    }
+
+    owner.token = null;
+    await owner.save();
+
+    res.clearCookie("token");
+
+    res.send({ message: "Tizimdan chiqdingiz" });
+  } catch (error) {
+    res.status(500).send({ message: "Xatolik yuz berdi", error });
+  }
 };
 
 const refreshToken = async (req, res) => {
@@ -188,7 +232,7 @@ const refreshToken = async (req, res) => {
     if (err) return res.status(403).send("Invalid refresh token");
 
     const accessToken = jwt.sign(
-      { id: owner.id, username: owner.username },
+      { id: owner.id, username: owner.username, role: "owner" },
       "your-secret-key",
       { expiresIn: "1h" }
     );
@@ -212,31 +256,6 @@ const activateOwner = async (req, res) => {
   }
 };
 
-async function getTopRentingOwners() {
-  try {
-    const result = await sequelize.query(
-      `
-          SELECT o.id, o.name, COUNT(r.id) AS rental_count
-          FROM Owners o
-          JOIN Products p ON o.id = p.owner_id
-          JOIN Rentals r ON p.id = r.product_id
-          WHERE r.status = 'rented'
-          GROUP BY o.id
-          ORDER BY rental_count DESC
-          LIMIT 10;
-      `,
-      {
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
-
-    console.log(result);
-  } catch (error) {
-    errorHandler(error, res);
-    console.error("Xatolik:", error);
-  }
-}
-
 module.exports = {
   addNewOwner,
   findAllOwners,
@@ -248,5 +267,4 @@ module.exports = {
   logoutOwner,
   refreshToken,
   activateOwner,
-  getTopRentingOwners,
 };

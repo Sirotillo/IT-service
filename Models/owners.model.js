@@ -21,14 +21,14 @@ const Owners = sequelize.define(
       },
     },
     token: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING,
     },
     email: {
       type: DataTypes.STRING(50),
-      allowNull: false,
-      validate: {
-        isEmail: true,
-      },
+      allowNull: false
+      // validate: {
+      //   isEmail: true,
+      // },
     },
     password: {
       type: DataTypes.STRING(100),

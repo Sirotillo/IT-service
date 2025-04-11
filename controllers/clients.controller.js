@@ -120,11 +120,15 @@ const registerClient = async (req, res) => {
       `${config.get("api_url")}/api/clients/activate/${activation_link}`
     );
 
-    const token = jwt.sign(
-      { id: newClient.id, full_name: newClient.full_name },
-      "your-secret-key",
-      { expiresIn: "1h" }
-    );
+    const payload = {
+      id: newClient._id,
+      email: newClient.email,
+      addres: newClient.phone_number,
+    };
+
+    const token = jwt.sign(payload, config.get("tokenKey"), {
+      expiresIn: config.get("tokenTime"),
+    });
 
     return res.status(201).json({
       message: "Client registered successfully!",
@@ -152,7 +156,7 @@ const loginClient = async (req, res) => {
   if (!isMatch) return res.status(400).send("Invalid password");
 
   const token = jwt.sign(
-    { id: client.id, email: client.email },
+    { id: client.id, email: client.email, role: "client" },
     "your-secret-key",
     { expiresIn: "24h" }
   );
@@ -175,7 +179,7 @@ const refreshToken = async (req, res) => {
     if (err) return res.status(403).send("Invalid refresh token");
 
     const accessToken = jwt.sign(
-      { id: client.id, email: client.email },
+      { id: client.id, email: client.email, role: "client" },
       "your-secret-key",
       { expiresIn: "1h" }
     );
@@ -199,82 +203,7 @@ const activateClient = async (req, res) => {
   }
 };
 
-const getBrokenProductClients = async (req, res) => {
-  const { from, to } = req.query;
 
-  try {
-    const [clients] = await sequelize.query(
-      `
-      SELECT DISTINCT cl.*
-      FROM contracts c
-      JOIN clients cl ON c.client_id = cl.id
-      WHERE c.start_date <= :to
-        AND c.end_date >= :from
-        AND c.status = false
-    `,
-      {
-        replacements: { from, to },
-      }
-    );
-
-    res.send(clients);
-  } catch (error) {
-    errorHandler(error, res);
-    res.status(500).json({ message: "Xatolik yuz berdi", error });
-  }
-};
-
-const getCanceledClients = async (req, res) => {
-  const { from, to } = req.query;
-
-  try {
-    const [clients] = await sequelize.query(
-      `
-      SELECT DISTINCT cl.*
-      FROM contracts c
-      JOIN clients cl ON c.client_id = cl.id
-      WHERE c.start_date <= :to
-        AND c.end_date >= :from
-        AND c.status = false
-    `,
-      {
-        replacements: { from, to },
-      }
-    );
-
-    res.send(clients);
-  } catch (error) {
-    errorHandler(error, res);
-    res.status(500).json({ message: "Xatolik yuz berdi", error });
-  }
-};
-
-async function getClientPayments(clientId) {
-  try {
-    const result = await sequelize.query(
-      `
-          SELECT p.id AS product_id, p.name AS product_name, c.name AS category_name, o.name AS owner_name, pay.amount AS payment_amount, pay.date AS payment_date
-          FROM Clients cl
-          JOIN Rentals r ON cl.id = r.client_id
-          JOIN Products p ON r.product_id = p.id
-          JOIN Categories c ON p.category_id = c.id
-          JOIN Owners o ON p.owner_id = o.id
-          JOIN Payments pay ON r.id = pay.rental_id
-          WHERE cl.id = :clientId
-          ORDER BY pay.date DESC;
-      `,
-      {
-        replacements: { clientId },
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
-
-    console.log(result);
-  } catch (error) {
-    errorHandler(error, res);
-    console.error("Xatolik:", error);
-  }
-}
 
 module.exports = {
   addNewClient,
@@ -287,7 +216,4 @@ module.exports = {
   logoutClient,
   refreshToken,
   activateClient,
-  getBrokenProductClients,
-  getCanceledClients,
-  getClientPayments,
 };

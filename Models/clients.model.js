@@ -18,10 +18,7 @@ const Clients = sequelize.define(
       allowNull: false,
     },
     token: {
-      type: DataTypes.STRING(20),
-      validate: {
-        is: /^\d{2}-\d{3}-\d{2}-\d{2}$/,
-      },
+      type: DataTypes.STRING,
     },
     email: {
       type: DataTypes.STRING(50),

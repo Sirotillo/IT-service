@@ -20,18 +20,8 @@ exports.adminValidation = (body) => {
       "string.min": "Parol kamida 6 ta belgidan iborat bo‘lishi kerak",
       "any.required": "Parol majburiy",
     }),
-    role: Joi.string().valid("superadmin", "admin").required().messages({
-      "any.only": "Role faqat 'superadmin' yoki 'admin' bo‘lishi mumkin",
-      "any.required": "Role majburiy",
-    }),
-    is_creator: Joi.boolean().required().messages({
-      "boolean.base": "is_creator faqat true yoki false bo‘lishi mumkin",
-      "any.required": "is_creator majburiy",
-    }),
-    status: Joi.boolean().required().messages({
-      "boolean.base": "status faqat true yoki false bo‘lishi kerak",
-      "any.required": "status majburiy",
-    }),
+    is_creator: Joi.boolean(),
+    status: Joi.boolean(),
   });
 
   return schema.validate(body, { abortEarly: false });

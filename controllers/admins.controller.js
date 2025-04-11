@@ -2,7 +2,10 @@ const { errorHandler } = require("../helpers/error_handler");
 const Admins = require("../Models/admins.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const uuid = require("uuid");
+const config = require('config');
 const { adminValidation } = require("../validations/admin.validation");
+const mailService = require("../services/mail.service");
 
 const addNewAdmin = async (req, res) => {
   try {
@@ -80,48 +83,6 @@ const deleteAdmin = async (req, res) => {
   }
 };
 
-const registerAdmin = async (req, res) => {
-  const { username, email, phone, password, role, is_creator } = req.body;
-
-  try {
-    const hashed = await bcrypt.hash(password, 10);
-
-    const newAdmin = await Admins.create({
-      username,
-      email,
-      phone,
-      password: hashed,
-      role,
-      is_creator,
-      status: true,
-    });
-
-    const refreshToken = jwt.sign(
-      { id: newAdmin.id, username: newAdmin.username },
-      "your-secret-key",
-      { expiresIn: "7d" }
-    );
-
-    const accessToken = jwt.sign(
-      { id: newAdmin.id, username: newAdmin.username },
-      "your-secret-key",
-      { expiresIn: "1h" }
-    );
-
-    newAdmin.token = refreshToken;
-    await newAdmin.save();
-
-    res.status(201).send({
-      message: "Admin ro‘yxatdan o‘tdi",
-      admin: newAdmin,
-      accessToken,
-      refreshToken,
-    });
-  } catch (err) {
-    res.status(400).send({ error: err.message });
-  }
-};
-
 const loginAdmin = async (req, res) => {
   const { username, password } = req.body;
 
@@ -132,7 +93,7 @@ const loginAdmin = async (req, res) => {
   if (!isMatch) return res.status(400).send("Invalid password");
 
   const token = jwt.sign(
-    { id: admin.id, username: admin.username },
+    { id: admin.id, username: admin.username, role: "admin" },
     "your-secret-key",
     { expiresIn: "24h" }
   );
@@ -178,14 +139,82 @@ const refreshToken = async (req, res) => {
   });
 };
 
+const registerAdmin = async (req, res) => {
+  const { username, email, password, phone, is_creator, status } = req.body;
+
+  if (!username || !email || !password || !phone || is_creator === undefined || status === undefined) {
+    return res.status(400).send({ message: "All fields are required!" });
+  }
+
+  try {
+    const existingAdmin = await Admins.findOne({ where: { email } });
+    if (existingAdmin) {
+      return res
+        .status(400)
+        .json({ message: "Admin with this email already exists!" });
+    }
+
+    const existingPhone = await Admins.findOne({ where: { phone } });
+    if (existingPhone) {
+      return res
+        .status(400)
+        .json({ message: "Admin with this phone number already exists!" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const activation_link = uuid.v4();
+
+    const newAdmin = await Admins.create({
+      username,
+      email,
+      password: hashedPassword,
+      phone,
+      is_creator,
+      status,
+    });
+
+    await mailService.sendActivationMail(
+      newAdmin.email,
+      `${config.get("api_url")}/api/admins/activate/${activation_link}`
+    );
+
+    const payload = {
+      id: newAdmin.id,
+      email: newAdmin.email,
+      phone: newAdmin.phone,
+    };
+
+    const token = jwt.sign(payload, config.get("tokenKey"), {
+      expiresIn: config.get("tokenTime"),
+    });
+
+    newAdmin.token = token;
+    await newAdmin.save();
+
+    return res.status(201).json({
+      message: "Admin registered successfully!",
+      admin: {
+        id: newAdmin.id,
+        username: newAdmin.username,
+        phone: newAdmin.phone,
+        email: newAdmin.email,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: "Server error!" });
+  }
+};
+
 module.exports = {
   addNewAdmin,
   findAllAdmins,
   findByIdAdmins,
   updateAdmin,
   deleteAdmin,
-  registerAdmin,
   loginAdmin,
   logoutAdmin,
   refreshToken,
+  registerAdmin,
 };
